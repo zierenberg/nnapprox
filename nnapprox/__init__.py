@@ -1,44 +1,71 @@
+"""Neural network approximation package with multiple backends."""
 
+from importlib import metadata
 
+# expose version without importing heavy back‑ends
+__version__: str = metadata.version(__name__)
+from .core import BaseApproximator
+from .core.exceptions import (
+    NNApproxError,
+    BackendNotAvailableError,
+    ModelNotFittedError,
+)
 
-
-
-
-from .core.base import BaseApproximator
-from .core.exceptions import BackendNotAvailableError, NNApproxError
-
-__version__ = "0.1.1"
-__all__ = ["BaseApproximator", "BackendNotAvailableError", "NNApproxError"]
-
-# Lazy backend imports
-def get_pytorch_approximator():
-    """Get PyTorch approximator if available."""
-    try:
+# Lazy factory
+def create_approximator(backend: str = "pytorch", **kwargs) -> BaseApproximator:
+    """
+    Create an approximator instance for the specified backend.
+    Parameters
+    ----------
+    backend : str, default="pytorch"
+        Backend to use ('pytorch', 'jax', etc.)
+    **kwargs
+        Additional keyword arguments passed to the backend-specific approximator
+        constructor.
+    """
+    backend = backend.lower()
+    if backend == "pytorch":
         from .backends.pytorch import PyTorchApproximator
-        return PyTorchApproximator
-    except ImportError as e:
-        raise BackendNotAvailableError(
-            "PyTorch backend not available. Install with: pip install nnapprox[pytorch]"
-        ) from e
-
-def get_jax_approximator():
-    """Get JAX approximator if available."""
-    try:
+        return PyTorchApproximator(**kwargs)
+    if backend == "jax":
         from .backends.jax import JAXApproximator
-        return JAXApproximator
-    except ImportError as e:
-        raise BackendNotAvailableError(
-            "JAX backend not available. Install with: pip install nnapprox[jax]"
-        ) from e
+        return JAXApproximator(**kwargs)
+    raise NNApproxError(f"Unsupported backend {backend!r}. Available: pytorch, jax.")
 
-# Convenience function
-def create_approximator(backend="pytorch", **kwargs):
-    """Create an approximator with the specified backend."""
-    if backend.lower() == "pytorch":
-        ApproximatorClass = get_pytorch_approximator()
-    elif backend.lower() == "jax":
-        ApproximatorClass = get_jax_approximator()
-    else:
-        raise ValueError(f"Unknown backend: {backend}. Available: 'pytorch', 'jax'")
+# load approximator with a given backend
+def load_approximator(path: str, backend: str = "pytorch") -> BaseApproximator:
+    """
+    Load a saved approximator from disk using the specified backend.
     
-    return ApproximatorClass(**kwargs)
+    Parameters
+    ----------
+    path : str
+        Path to the saved model file
+    backend : str, default="pytorch"
+        Backend to use for loading ('pytorch', etc.)
+        
+    Returns
+    -------
+    BaseApproximator
+        The loaded approximator instance
+        
+    Example
+    -------
+    >>> func = load_approximator("model.pt", backend="pytorch")
+    >>> y = func(x1, x2)
+    """
+    if backend == "pytorch":
+        from .backends.pytorch import load_torch_approximator
+        return load_torch_approximator(path)
+    else:
+        raise ValueError(f"Unsupported backend: {backend!r}")
+
+__all__ = [
+    "BaseApproximator",
+    "load_approximator",
+    "NNApproxError",
+    "BackendNotAvailableError",
+    "ModelNotFittedError",
+    "create_approximator",
+    "__version__",
+]

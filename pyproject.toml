@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nnapprox"
-version = "0.1.0"
+dynamic = ["version"]   
 authors = [
   { name="Johannes Zierenberg", email="johannes.zierenberg@gmail.com" },
 ]
@@ -20,6 +20,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+[tool.hatch.version]
+path = "nnapprox/_version.py"
+
+
 
 [project.optional-dependencies]
 pytorch = [
