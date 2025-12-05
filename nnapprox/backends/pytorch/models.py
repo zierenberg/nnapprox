@@ -240,7 +240,7 @@ class PyTorchApproximator(BaseApproximator):
 
         return Xs, Ys
     
-    def train(self, Xs: np.ndarray, Ys: np.ndarray, custom_loss=None, epochs=1000, lr=0.005, device=None):
+    def train(self, Xs: np.ndarray, Ys: np.ndarray, custom_loss=None, epochs=10000, lr=1e-3, eps=1e-5, amsgrad=False, device=None):
         """Trains the neural network."""
         # select suitable device for training
         if device is None:
@@ -256,7 +256,7 @@ class PyTorchApproximator(BaseApproximator):
             print(f"Training data with input shape {X_tensor.shape} and output shape {Y_tensor.shape}.")
 
         # Adam and MSE Loss
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        optimizer = optim.Adam(self.model.parameters(), lr=lr, eps=eps, amsgrad=amsgrad)
         loss_fn = nn.MSELoss(reduction="mean")
         if custom_loss is None:
             def custom_loss(Y_pred, Y, X):

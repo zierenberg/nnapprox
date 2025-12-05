@@ -1,9 +1,13 @@
-"""Neural network approximation package with multiple backends."""
+
+
+
+
+
 
 from .core.base import BaseApproximator
 from .core.exceptions import BackendNotAvailableError, NNApproxError
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = ["BaseApproximator", "BackendNotAvailableError", "NNApproxError"]
 
 # Lazy backend imports
@@ -38,6 +42,3 @@ def create_approximator(backend="pytorch", **kwargs):
         raise ValueError(f"Unknown backend: {backend}. Available: 'pytorch', 'jax'")
     
     return ApproximatorClass(**kwargs)
-
-# from .pytorch.function import func
-# from .pytorch.architectures import DenseNN

@@ -15,12 +15,7 @@ class BaseApproximator(ABC):
     def train(self, X: np.ndarray, y: np.ndarray, **kwargs) -> 'BaseApproximator':
         """Fit the approximator to training data."""
         pass
-    
-    # @abstractmethod
-    # def predict(self, X: np.ndarray) -> np.ndarray:
-    #     """Make predictions on new data."""
-    #     pass
-    
+     
     @abstractmethod
     def save(self, filepath: str) -> None:
         """Save the trained model."""
@@ -37,3 +32,5 @@ class BaseApproximator(ABC):
         ss_res = np.sum((y - y_pred) ** 2)
         ss_tot = np.sum((y - np.mean(y)) ** 2)
         return 1 - (ss_res / ss_tot)
+    
+
