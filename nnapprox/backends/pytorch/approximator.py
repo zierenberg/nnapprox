@@ -1,5 +1,10 @@
 from __future__ import annotations
 import pickle
+try:
+    import cloudpickle
+    _HAS_CLOUDPICKLE = True
+except ImportError:
+    _HAS_CLOUDPICKLE = False
 import numpy as np
 import pandas as pd
 from typing import Any, Mapping, Sequence, Callable, Type
@@ -285,25 +290,38 @@ class PyTorchApproximator(BaseApproximator):
             return pd.concat([input_df, out_df], axis=1)
 
         return Y
-
-
     
     def save(self, path: str) -> None:
-        """Save the complete model state to a file."""
+        """
+        Save the complete model state to a file.
+        
+        Note: Models with custom transforms (lambdas, closures) require cloudpickle
+        and may not be portable across Python versions. Install with: pip install cloudpickle
+        """
         if not self.is_fitted:
             raise ModelNotFittedError("Cannot save an unfitted model.")
+        
+        # Check if we have custom transforms and need cloudpickle
+        has_custom = any(
+            tr.spec["type"] == "custom" 
+            for tr in self.input_transforms + self.output_transforms
+        )
+        
+        if has_custom and not _HAS_CLOUDPICKLE:
+            raise NNApproxError(
+                "Cannot save model with custom transforms: cloudpickle is required.\n"
+                "Install with: pip install cloudpickle\n\n"
+                "Alternatively, use predefined transforms: func.set_transform('x', transform_type='log')"
+            )
         
         # Serialize transforms - only save specs, not callable objects
         def _serialize_transform(tr):
             spec = tr.spec.copy()
-            # For custom transforms, extract the code as bytes
+            # For custom transforms, we just pickle the function objects
             if spec["type"] == "custom":
-                # Serialize the function bytecode
-                import marshal
-                spec["forward_code"] = marshal.dumps(tr.forward.__code__)
-                spec["inverse_code"] = marshal.dumps(tr.inverse.__code__)
-                spec["forward_name"] = tr.forward.__name__
-                spec["inverse_name"] = tr.inverse.__name__
+                # cloudpickle made for this purpose
+                spec["forward_func"] = cloudpickle.dumps(tr.forward)
+                spec["inverse_func"] = cloudpickle.dumps(tr.inverse)
             return spec
         
         # Serialize activation properly
@@ -347,12 +365,24 @@ class PyTorchApproximator(BaseApproximator):
 
 
     def load(self, path: str) -> "PyTorchApproximator":
-        """Load a complete model state from a file."""
-        # Load directly to CPU (models are stored on CPU after training)
+        """
+        Load a complete model state from a file.
+        
+        Warning: Models saved with custom transforms (lambdas) may not load
+        across different Python versions.
+        """
+        # Load directly to CPU
         state = torch.load(path, map_location="cpu", weights_only=False)
         
         if "model_state" not in state:
             raise NNApproxError(f"Invalid checkpoint: missing 'model_state'.")
+        
+        # Check if cloudpickle is needed
+        if state.get("uses_cloudpickle", False) and not _HAS_CLOUDPICKLE:
+            raise NNApproxError(
+                "This model was saved with custom transforms and requires cloudpickle to load.\n"
+                "Install with: pip install cloudpickle"
+            )
 
         # Restore input/output configuration
         self.input_names = state["input_names"]
@@ -360,24 +390,22 @@ class PyTorchApproximator(BaseApproximator):
         self.input_dim = len(self.input_names)
         self.output_dim = len(self.output_names)
         
-        # Reconstruct transforms from specs
+         # Reconstruct transforms from specs
         def _rebuild_transform(spec: dict) -> Transform:
             if spec["type"] == "predefined":
-                # Reconstruct from name - this recreates the lambdas
                 return Transform.predefined(spec["name"])
             elif spec["type"] == "identity":
                 return Transform.predefined("identity")
             elif spec["type"] == "custom":
-                # Reconstruct functions from bytecode
-                import marshal
-                forward_code = marshal.loads(spec["forward_code"])
-                inverse_code = marshal.loads(spec["inverse_code"])
-                
-                # Create function objects from code objects
-                forward_func = types.FunctionType(forward_code, globals(), spec["forward_name"])
-                inverse_func = types.FunctionType(inverse_code, globals(), spec["inverse_name"])
-                
-                return Transform.custom(forward_func, inverse_func)
+                try:
+                    forward_func = cloudpickle.loads(spec["forward_func"])
+                    inverse_func = cloudpickle.loads(spec["inverse_func"])
+                    return Transform.custom(forward_func, inverse_func)
+                except Exception as e:
+                    raise NNApproxError(
+                        f"Failed to load custom transform: {e}\n"
+                        f"This model may have been saved in a different Python version."
+                    ) from e
             else:
                 raise NNApproxError(f"Unknown transform type: {spec['type']}")
 
@@ -387,32 +415,11 @@ class PyTorchApproximator(BaseApproximator):
         # Restore scalers
         self._x_scaler = state["x_scaler"]
         self._y_scaler = state["y_scaler"]
-
-        # Map activation name back to class
-        activation_map = {
-            "Tanh": nn.Tanh,
-            "ReLU": nn.ReLU,
-            "Sigmoid": nn.Sigmoid,
-            "LeakyReLU": nn.LeakyReLU,
-            "ELU": nn.ELU,
-            "GELU": nn.GELU,
-            "Identity": nn.Identity,
-        }
         
-        # Handle both old format (string) and new format (dict)
+        # Get activation class from saved info
         activation_info = state["activation"]
-        if isinstance(activation_info, str):
-            # Old format - just a string
-            activation_name = activation_info
-        elif isinstance(activation_info, dict):
-            # New format - dict with type and name
-            activation_name = activation_info["name"]
-        else:
-            raise NNApproxError(f"Unknown activation format: {type(activation_info)}")
-        
-        if activation_name not in activation_map:
-            raise NNApproxError(f"Unknown activation: {activation_name}. Available: {list(activation_map.keys())}")
-        activation_class = activation_map[activation_name]
+        activation_name = activation_info["name"]
+        activation_class = getattr(nn, activation_name)
 
         # Recreate model with correct architecture (on CPU)
         self.model = MLPModel(
@@ -421,7 +428,7 @@ class PyTorchApproximator(BaseApproximator):
             hidden_dims=state["hidden_dims"],
             activation=activation_class,
             dropout=state["dropout"],
-        )  # No .to(self.device) - keep on CPU
+        ) 
         
         # Load the trained weights
         self.model.load_state_dict(state["model_state"])
