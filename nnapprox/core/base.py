@@ -48,9 +48,7 @@ class BaseApproximator(ABC):
         # Fit flag
         self.is_fitted = False
 
-    # -------------------------------
-    # Transform registration
-    # -------------------------------
+    # general method that all backends should support
     def set_transform(
         self,
         label: str,
@@ -59,7 +57,12 @@ class BaseApproximator(ABC):
         forward: Any = None,
         inverse: Any = None,
     ) -> None:
-        """Register a forward/inverse transform for an input/output variable."""
+        """
+        Register a forward / inverse transformation for a variable.
+
+        *Pre‑defined* transforms are referenced by ``transform_type`` (e.g.
+        ``"log"``).  For a custom pair supply ``forward`` and ``inverse``.
+        """
         if label in self.input_names:
             idx = self.input_names.index(label)
             target = self.input_transforms
@@ -67,12 +70,12 @@ class BaseApproximator(ABC):
             idx = self.output_names.index(label)
             target = self.output_transforms
         else:
-            raise ValueError(f"{label!r} is not a known input or output name.")
+            raise NNApproxError(f"{label!r} is not a known input or output name.")
 
         # Predefined transform
         if transform_type:
             if forward is not None or inverse is not None:
-                raise ValueError(
+                raise NNApproxError(
                     "Provide either `transform_type` **or** both `forward`/`inverse`, not both."
                 )
             target[idx] = Transform.predefined(transform_type)
@@ -80,7 +83,7 @@ class BaseApproximator(ABC):
 
         # Custom transform
         if forward is None or inverse is None:
-            raise ValueError("Both `forward` and `inverse` must be supplied for a custom transform.")
+            raise NNApproxError("Both `forward` and `inverse` must be supplied for a custom transform.")
 
         # Ensure functions are defined in a module
         import inspect
@@ -88,7 +91,7 @@ class BaseApproximator(ABC):
             inspect.getsource(forward)
             inspect.getsource(inverse)
         except OSError as exc:
-            raise ValueError("Custom transform functions must be defined in a module.") from exc
+            raise NNApproxError("Custom transform functions must be defined in a module.") from exc
 
         target[idx] = Transform.custom(forward, inverse)
 
@@ -114,9 +117,7 @@ class BaseApproximator(ABC):
         ss_tot = ((y - y.mean()) ** 2).sum()
         return 1.0 - ss_res / ss_tot
 
-    # -------------------------------
-    # Abstract methods (backend-specific)
-    # -------------------------------
+    #backend must implement these methods
     @abstractmethod
     def fit(self, data: Any, **kwargs) -> BaseApproximator:
         ...

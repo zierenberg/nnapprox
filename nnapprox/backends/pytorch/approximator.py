@@ -27,7 +27,6 @@ from .models import MLPModel
 
 class PyTorchApproximator(BaseApproximator):
     """PyTorch-backed neural network approximator."""
-
     def __init__(
         self,
         *,
@@ -70,55 +69,7 @@ class PyTorchApproximator(BaseApproximator):
         act_range = (-1, 1) if isinstance(activation, nn.Tanh) else (0, 1)
         self._x_scaler = MinMaxScaler(feature_range=act_range)
         self._y_scaler = MinMaxScaler(feature_range=act_range)
-        self.is_fitted = False
-
-    def set_transform(
-        self,
-        label: str,
-        *,
-        transform_type: str | None = None,
-        forward: Callable | None = None,
-        inverse: Callable | None = None,
-    ) -> None:
-        """
-        Register a forward / inverse transformation for a variable.
-
-        *Pre‑defined* transforms are referenced by ``transform_type`` (e.g.
-        ``"log"``).  For a custom pair supply ``forward`` and ``inverse``.
-        """
-        # Resolve which list we are editing
-        if label in self.input_names:
-            idx = self.input_names.index(label)
-            target = self.input_transforms
-        elif label in self.output_names:
-            idx = self.output_names.index(label)
-            target = self.output_transforms
-        else:
-            raise ValueError(f"{label!r} is not a known input or output name.")
-
-        # predefined transform
-        if transform_type:
-            if forward is not None or inverse is not None:
-                raise ValueError(
-                    "Provide either `transform_type` **or** both `forward`/`inverse`, not both."
-                )
-            target[idx] = Transform.predefined(transform_type)
-            return
-
-        # custom transform
-        if forward is None or inverse is None:
-            raise ValueError("Both `forward` and `inverse` must be supplied for a custom transform.")
-
-        # Verify that we can get a stable import path (helps with saving / loading)
-        try:
-            inspect.getsource(forward)
-            inspect.getsource(inverse)
-        except OSError as exc:
-            raise ValueError(
-                "Custom transform functions must be defined in a module (not interactively)."
-            ) from exc
-
-        target[idx] = Transform.custom(forward, inverse)
+        self.is_fitted = False       
 
     # prepare data for training
     def _extract_arrays(self, data: Mapping[str, Any]) -> tuple[np.ndarray, np.ndarray]:
@@ -203,53 +154,51 @@ class PyTorchApproximator(BaseApproximator):
 
     def _prepare_inputs(self, *args: Any) -> tuple[np.ndarray, int]:
         """
-        Return a 2-D array (n_samples, n_features) and the number of samples.
-        Works with:
-            - Scalars
-            - 1D arrays / lists / Series
-            - pandas DataFrames
+        Convert inputs to a 2D array (n_samples, n_features) and return the number of samples.
+        
+        Supports:
+            - Single DataFrame with all input columns
+            - Multiple arrays/lists/scalars (one per input)
         """
-        import pandas as pd
-        import numpy as np
-
-        # DataFrame shortcut
+        # Case 1: Single DataFrame
         if len(args) == 1 and isinstance(args[0], pd.DataFrame):
             df = args[0]
-            missing = [c for c in self.input_names if c not in df.columns]
+            missing = [col for col in self.input_names if col not in df.columns]
             if missing:
                 raise ValueError(f"DataFrame missing columns: {missing}")
-            raw = np.column_stack([np.asarray(df[col]).ravel() for col in self.input_names])
+            raw = np.column_stack([df[col].values for col in self.input_names])
+            n_samples = len(df)
+        
+        # Case 2: Individual arguments (arrays, lists, scalars)
         else:
             if len(args) != self.input_dim:
                 raise ValueError(f"Expected {self.input_dim} inputs, got {len(args)}")
-            # convert everything to 1D arrays
-            arrays = []
-            for arg in args:
-                arr = np.asarray(arg)
-                if arr.ndim == 0:
-                    arr = np.array([arr])  # scalar -> 1D
-                elif arr.ndim > 1 and arr.shape[0] == 1:
-                    arr = arr.ravel()
-                elif arr.ndim > 1 and arr.shape[0] != 1:
-                    arr = arr.reshape(-1)
-                arrays.append(arr)
+            
+            # Convert all inputs to 1D arrays
+            arrays = [np.atleast_1d(np.asarray(arg).ravel()) for arg in args]
+            
+            # Find the maximum length (ignore length-1 arrays which will be broadcast)
+            lengths = [len(arr) for arr in arrays]
+            non_scalar_lengths = [l for l in lengths if l > 1]
+            n_samples = max(non_scalar_lengths) if non_scalar_lengths else 1
+            
+            # Broadcast scalars to match n_samples
+            for i, arr in enumerate(arrays):
+                if len(arr) == 1 and n_samples > 1:
+                    arrays[i] = np.full(n_samples, arr[0])
+                elif len(arr) != n_samples and len(arr) != 1:
+                    raise ValueError(
+                        f"Input {i} ({self.input_names[i]}) has length {len(arr)}, "
+                        f"expected {n_samples} or 1"
+                    )
+            
             raw = np.column_stack(arrays)
-
-        # Broadcast scalars to the longest vector
-        max_len = max(col.shape[0] for col in raw.T)
-        for i, col in enumerate(raw.T):
-            if col.shape[0] == 1 and max_len > 1:
-                raw[:, i] = np.full(max_len, col[0])
-            elif col.shape[0] not in (1, max_len):
-                raise ValueError(
-                    f"Input column {i} length {col.shape[0]} is incompatible with other inputs ({max_len})."
-                )
-
+        
         # Apply forward transforms
         for i, tr in enumerate(self.input_transforms):
             raw[:, i] = tr.forward(raw[:, i])
-
-        return raw, max_len
+        
+        return raw, n_samples
 
 
     def predict(
@@ -257,37 +206,67 @@ class PyTorchApproximator(BaseApproximator):
         *args: Any,
         return_dataframe: bool = False,
     ) -> np.ndarray | pd.DataFrame:
-        """Return predictions; optionally as a DataFrame that also contains the inputs."""
+        """
+        Return predictions; optionally as a DataFrame that also contains the inputs.
+        
+        Parameters
+        ----------
+        *args : array-like or DataFrame
+            Either a single DataFrame with all input columns, or individual arrays/scalars
+            for each input (in order of input_names)
+        return_dataframe : bool, default=False
+            If True, return a DataFrame with both inputs and outputs
+            
+        Returns
+        -------
+        np.ndarray or pd.DataFrame
+            Predictions, optionally as a DataFrame
+            
+        Examples
+        --------
+        >>> # With individual arrays
+        >>> predictions = func.predict(x1, x2, x3)
+        
+        >>> # With DataFrame
+        >>> predictions = func.predict(df)
+        
+        >>> # With scalars
+        >>> prediction = func.predict(1.0, 2.0, 3.0)
+        
+        >>> # Return as DataFrame
+        >>> result_df = func.predict(x1, x2, return_dataframe=True)
+        """
         if not self.is_fitted:
             raise ModelNotFittedError("Call `fit` before `predict`.")
 
-        X_raw, n = self._prepare_inputs(*args)
+        X_raw, n_samples = self._prepare_inputs(*args)
 
-        # Scale, run through the net, inverse‑scale
+        # Scale inputs
         X_scaled = self._x_scaler.transform(X_raw)
+        
+        # Run through network
         with torch.no_grad():
             Y_scaled = self.model(torch.from_numpy(X_scaled).float()).cpu().numpy()
+        
+        # Inverse scale outputs
         Y = self._y_scaler.inverse_transform(Y_scaled)
-
-        # Apply inverse output transforms
+        # Apply inverse output transforms (TOOD is there a mistake here?)
         for i, tr in enumerate(self.output_transforms):
             Y[:, i] = tr.inverse(Y[:, i])
 
-        # If a single sample was requested, return scalars
-        if n == 1:
+        # Return scalar if single sample was provided
+        if n_samples == 1:
             Y = Y.squeeze()
 
         if return_dataframe:
-            # Build a tidy DataFrame that mirrors the original input format
+            # Build DataFrame with inputs and outputs
             if len(args) == 1 and isinstance(args[0], pd.DataFrame):
                 input_df = args[0][self.input_names].reset_index(drop=True)
             else:
-                # Re‑create the input columns from the broadcasted arrays
-                input_df = pd.DataFrame(
-                    {name: X_raw[:, i] for i, name in enumerate(self.input_names)}
-                )
-            out_df = pd.DataFrame(Y, columns=self.output_names)
-            return pd.concat([input_df, out_df], axis=1)
+                input_df = pd.DataFrame(X_raw, columns=self.input_names)
+            
+            output_df = pd.DataFrame(Y if n_samples > 1 else [Y], columns=self.output_names)
+            return pd.concat([input_df, output_df], axis=1)
 
         return Y
     
