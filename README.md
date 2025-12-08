@@ -66,12 +66,12 @@ def y_true(x1, x2):
 data = pd.DataFrame({'x1': x1, 'x2': x2, 'y': y_true(x1, x2)})
 
 func = nna.create_approximator(
-    input=['temp', 'pressure'],
-    output=['output'],
+    input=['x1', 'x2'],
+    output=['y'],
     backend='pytorch'
 )
 func.fit(df, epochs=3000)
-predictions = func.predict(data, return_dataframe=True)
+predictions = func(data, return_dataframe=True)
 ```
 
 ## Transformations
