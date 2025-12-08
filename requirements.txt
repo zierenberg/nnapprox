@@ -2,3 +2,8 @@ flake8
 pytest
 numpy
 scipy
+pandas
+pickle
+cloudpickle
+tqdm
+scikit-learn
