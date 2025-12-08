@@ -3,6 +3,7 @@
 [![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://zierenberg.github.io/nnapprox/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![codecov](https://codecov.io/gh/zierenberg/nnapprox/graph/badge.svg?token=23I9509JXH)](https://codecov.io/gh/zierenberg/nnapprox)
 [![CI](https://github.com/zierenberg/nnapprox/actions/workflows/docs.yml/badge.svg)](https://github.com/zierenberg/nnapprox/actions)
 
 Neural network function approximation using PyTorch (Future backends planned). Approximate arbitrary functions with automatic scaling, transformations, and serialization.
