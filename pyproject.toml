@@ -4,19 +4,55 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nnapprox"
-version = "0.0.1"
+dynamic = ["version"]   
 authors = [
   { name="Johannes Zierenberg", email="johannes.zierenberg@gmail.com" },
 ]
-description = "Package to train neural network as a general approximator"
+description = "Neural network approximation for high-dimensional functional relations"
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+[tool.hatch.version]
+path = "nnapprox/_version.py"
+
+
+
+[project.optional-dependencies]
+pytorch = [
+    "torch>=1.10.0",
+    "torchvision>=0.11.0",
+]
+jax = [
+    "jax>=0.4.0",
+    "jaxlib>=0.4.0",
+    "flax>=0.6.0",
+    "optax>=0.1.0",
+]
+all = [
+    "torch>=1.10.0",
+    "torchvision>=0.11.0",
+    "jax>=0.4.0",
+    "jaxlib>=0.4.0",
+    "flax>=0.6.0",
+    "optax>=0.1.0",
+]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+    "black>=22.0",
+    "flake8>=4.0",
+    "mypy>=0.900",
+]
 
 [project.urls]
 Homepage = "https://github.com/zierenberg/nnapprox"
 Issues = "https://github.com/zierenberg/nnapprox/issues"
+Documentation = "https://nnapprox.readthedocs.io"

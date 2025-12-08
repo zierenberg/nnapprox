@@ -3,6 +3,16 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Documentation
+docs/build/
+docs/source/_build/
+
+# vs code
+.vscode/
+
+# macOS
+.DS_Store
+
 # C extensions
 *.so
 
