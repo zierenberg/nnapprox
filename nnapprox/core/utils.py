@@ -21,7 +21,7 @@ class Transform:
         predefined = {
             "identity": (lambda x: x, lambda x: x),
             "log": (np.log, np.exp),
-            "log10": (np.log10, lambda x: 10 ** x),
+            "log10": (np.log10, lambda x: np.power(10, x)),
             "exp": (np.exp, np.log),
         }
         if name not in predefined:

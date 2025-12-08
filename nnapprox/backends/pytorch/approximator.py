@@ -26,7 +26,93 @@ from ...core.utils import Transform
 from .models import MLPModel
 
 class PyTorchApproximator(BaseApproximator):
-    """PyTorch-backed neural network approximator."""
+    """
+    PyTorch-backed neural network function approximator.
+    
+    This class provides a flexible interface for approximating arbitrary functions
+    using multilayer perceptrons (MLPs). It supports automatic scaling, custom
+    transformations, and serialization of trained models.
+    
+    Parameters
+    ----------
+    input : Sequence[str]
+        Names of input variables (features)
+    output : Sequence[str]
+        Names of output variables (targets)
+    hidden_dims : Sequence[int], optional
+        Number of neurons in each hidden layer. Default is [42, 42, 42]
+    activation : Type[nn.Module], default=nn.Tanh
+        Activation function class (e.g., nn.ReLU, nn.Tanh)
+    dropout : float, default=0.0
+        Dropout probability for regularization (0.0 = no dropout)
+    verbose : bool, default=False
+        Whether to print training progress
+    **model_kwargs : Any
+        Additional keyword arguments passed to the MLP model
+        
+    Attributes
+    ----------
+    model : MLPModel
+        The underlying PyTorch neural network
+    is_fitted : bool
+        Whether the model has been trained
+    input_names : list[str]
+        Names of input variables
+    output_names : list[str]
+        Names of output variables
+    training_loss : np.ndarray
+        Training loss history after fitting
+        
+    Examples
+    --------
+    Basic usage with numpy arrays:
+    
+    >>> import nnapprox as nna
+    >>> import numpy as np
+    >>> 
+    >>> # Generate training data
+    >>> x1 = np.linspace(0, 10, 100)
+    >>> x2 = np.linspace(0, 5, 100)
+    >>> y = np.sin(x1) * np.cos(x2)
+    >>> 
+    >>> # Create approximator
+    >>> func = nna.PyTorchApproximator(
+    ...     input=['x1', 'x2'],
+    ...     output=['y'],
+    ...     hidden_dims=[64, 64]
+    ... )
+    >>> 
+    >>> # Train
+    >>> func.fit({'x1': x1, 'x2': x2, 'y': y}, epochs=1000)
+    >>> 
+    >>> # Predict
+    >>> predictions = func(x1_new, x2_new)
+    
+    With pandas DataFrame:
+    
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'x1': x1, 'x2': x2, 'y': y})
+    >>> func.fit(df, epochs=1000)
+    >>> result_df = func.predict(df, return_dataframe=True)
+    
+    With transformations:
+    
+    >>> func.set_transform('x1', transform_type='log')
+    >>> func.set_transform('y', transform_type='log')
+    >>> func.fit(data, epochs=1000)
+    
+    Notes
+    -----
+    - The model automatically scales inputs and outputs to the activation function range
+    - After training, the model is moved to CPU for efficient inference
+    - Custom transforms must be serializable (defined in modules, not interactively)
+      or use cloudpickle for lambda functions
+      
+    See Also
+    --------
+    load_torch_approximator : Load a saved approximator
+    create_approximator : Factory function for creating approximators
+    """
     def __init__(
         self,
         *,
@@ -64,9 +150,9 @@ class PyTorchApproximator(BaseApproximator):
             **model_kwargs,
         ).to(self.device)
 
-        # Scalers
+        # Scalers (TODO needs to be replaced with internal routine to be abel to access the scaling parameters for custom loss functions, etc.)
         from sklearn.preprocessing import MinMaxScaler
-        act_range = (-1, 1) if isinstance(activation, nn.Tanh) else (0, 1)
+        act_range = (-1, 1) #if isinstance(activation, nn.Tanh) else (0, 1)
         self._x_scaler = MinMaxScaler(feature_range=act_range)
         self._y_scaler = MinMaxScaler(feature_range=act_range)
         self.is_fitted = False       
@@ -82,14 +168,14 @@ class PyTorchApproximator(BaseApproximator):
         """Apply transforms + scaling – returns arrays ready for training."""
         X_raw, Y_raw = self._extract_arrays(data)
 
-        # Apply forward transforms
+        # Apply forward transforms to input and then scale to dynamic range
         for i, tr in enumerate(self.input_transforms):
             X_raw[:, i] = tr.forward(X_raw[:, i])
+        X_scaled = self._x_scaler.fit_transform(X_raw)
+
+        # Apply forward transforms to output and then scale to dynamic range
         for i, tr in enumerate(self.output_transforms):
             Y_raw[:, i] = tr.forward(Y_raw[:, i])
-
-        # Scale to activation range
-        X_scaled = self._x_scaler.fit_transform(X_raw)
         Y_scaled = self._y_scaler.fit_transform(Y_raw)
 
         return X_scaled, Y_scaled
@@ -102,14 +188,69 @@ class PyTorchApproximator(BaseApproximator):
         custom_loss=None,
         epochs: int = 10_000,
         lr: float = 1e-3,
-        eps: float = 1e-5,
-        amsgrad: bool = False,
+        amsgrad: bool = False, # what does this do? 
         batch_size: int | None = None,
         verbose: bool | None = None,
         **optim_kwargs: Any,
     ) -> "PyTorchApproximator":
         """
-        Train the model.
+        Train the neural network approximator.
+        
+        Parameters
+        ----------
+        data : Mapping[str, Any]
+            Dictionary or DataFrame containing training data. Keys/columns must
+            include all input and output variable names.
+        custom_loss : Callable, optional
+            Custom loss function with signature `loss(y_pred, y_true, x)`.
+            Default is MSE loss.
+        epochs : int, default=10_000
+            Number of training epochs
+        lr : float, default=1e-3
+            Learning rate for Adam optimizer
+        eps : float, default=1e-8
+            Epsilon for numerical stability in Adam. Lower values allow more
+            precise convergence. Use 1e-5 for smoother but less accurate training.
+        amsgrad : bool, default=False
+            Whether to use AMSGrad variant of Adam. Can improve convergence
+            but may find worse local minima.
+        batch_size : int, optional
+            Batch size for mini-batch training. None means full-batch.
+        verbose : bool, optional
+            Override instance verbose setting
+        **optim_kwargs : Any
+            Additional arguments passed to Adam optimizer
+            
+        Returns
+        -------
+        self : PyTorchApproximator
+            The fitted approximator (for method chaining)
+            
+        Examples
+        --------
+        Basic training:
+        
+        >>> func.fit(data, epochs=5000, lr=1e-3)
+        
+        With custom loss:
+        
+        >>> def physics_loss(y_pred, y_true, x):
+        ...     mse = F.mse_loss(y_pred, y_true)
+        ...     physics_penalty = torch.mean((y_pred - x[:, 0])**2)
+        ...     return mse + 0.1 * physics_penalty
+        >>> 
+        >>> func.fit(data, custom_loss=physics_loss, epochs=10000)
+        
+        Notes
+        -----
+        - The model is automatically moved to CPU after training for inference
+        - Training loss history is stored in `self.training_loss`
+        - Use lower `lr` if training is unstable
+        - Default `eps=1e-8` provides best accuracy
+        
+        See Also
+        --------
+        predict : Make predictions with the fitted model
         """
         Xs, Ys = self.prepare_data(data)
 
@@ -121,7 +262,7 @@ class PyTorchApproximator(BaseApproximator):
             print(f"Training data with input shape {X_tensor.shape} and output shape {Y_tensor.shape}.")
 
         # Adam and MSE Loss
-        optimizer = optim.Adam(self.model.parameters(), lr=lr, eps=eps, amsgrad=amsgrad)
+        optimizer = optim.Adam(self.model.parameters(), lr=lr, amsgrad=amsgrad)
         loss_fn = nn.MSELoss(reduction="mean")
         if custom_loss is None:
             def custom_loss(Y_pred, Y, X):
@@ -194,10 +335,6 @@ class PyTorchApproximator(BaseApproximator):
             
             raw = np.column_stack(arrays)
         
-        # Apply forward transforms
-        for i, tr in enumerate(self.input_transforms):
-            raw[:, i] = tr.forward(raw[:, i])
-        
         return raw, n_samples
 
 
@@ -207,41 +344,74 @@ class PyTorchApproximator(BaseApproximator):
         return_dataframe: bool = False,
     ) -> np.ndarray | pd.DataFrame:
         """
-        Return predictions; optionally as a DataFrame that also contains the inputs.
+        Make predictions using the trained model.
+        
+        Supports multiple input formats for convenience:
+        - Individual arrays/lists for each input
+        - Mixed scalars and arrays (scalars are broadcast)
+        - Single DataFrame containing all inputs
         
         Parameters
         ----------
         *args : array-like or DataFrame
-            Either a single DataFrame with all input columns, or individual arrays/scalars
-            for each input (in order of input_names)
+            Either individual arrays/scalars for each input (in order of
+            input_names), or a single DataFrame with all input columns
         return_dataframe : bool, default=False
-            If True, return a DataFrame with both inputs and outputs
+            If True, return DataFrame with both inputs and predictions
             
         Returns
         -------
-        np.ndarray or pd.DataFrame
-            Predictions, optionally as a DataFrame
+        predictions : np.ndarray or pd.DataFrame
+            - If single sample: scalar (1 output) or 1D array (multiple outputs)
+            - If multiple samples, single output: 1D array of shape (n,)
+            - If multiple samples, multiple outputs: 2D array of shape (n, m)
+            - If return_dataframe=True: DataFrame with inputs and outputs
+            
+        Raises
+        ------
+        ModelNotFittedError
+            If predict is called before fit
+        ValueError
+            If wrong number of inputs provided or input lengths don't match
             
         Examples
         --------
-        >>> # With individual arrays
+        With individual arrays:
+        
         >>> predictions = func.predict(x1, x2, x3)
         
-        >>> # With DataFrame
-        >>> predictions = func.predict(df)
+        With DataFrame:
         
-        >>> # With scalars
-        >>> prediction = func.predict(1.0, 2.0, 3.0)
+        >>> df_pred = func.predict(df)
         
-        >>> # Return as DataFrame
-        >>> result_df = func.predict(x1, x2, return_dataframe=True)
+        With mixed scalars and arrays (broadcasting):
+        
+        >>> # Fix x1=5, vary x2
+        >>> predictions = func(5, np.linspace(0, 10, 100))
+        
+        Return as DataFrame:
+        
+        >>> result = func.predict(x1, x2, return_dataframe=True)
+        >>> print(result.columns)  # ['x1', 'x2', 'y']
+        
+        Notes
+        -----
+        - Scalars are automatically broadcast to match array lengths
+        - All input arrays must have the same length or be length-1
+        - Transformations are automatically applied and inverted
+        
+        See Also
+        --------
+        __call__ : Alias for predict without return_dataframe option
         """
         if not self.is_fitted:
             raise ModelNotFittedError("Call `fit` before `predict`.")
 
         X_raw, n_samples = self._prepare_inputs(*args)
 
-        # Scale inputs
+        # Transform and scale inputs
+        for i, tr in enumerate(self.input_transforms):
+            X_raw[:, i] = tr.forward(X_raw[:, i])
         X_scaled = self._x_scaler.transform(X_raw)
         
         # Run through network
@@ -250,13 +420,17 @@ class PyTorchApproximator(BaseApproximator):
         
         # Inverse scale outputs
         Y = self._y_scaler.inverse_transform(Y_scaled)
-        # Apply inverse output transforms (TOOD is there a mistake here?)
+        # Apply inverse output transforms
         for i, tr in enumerate(self.output_transforms):
             Y[:, i] = tr.inverse(Y[:, i])
 
-        # Return scalar if single sample was provided
+        # Remove unnecessary dimensions for single sample or vector output
         if n_samples == 1:
+            # return 1D array or scalar
             Y = Y.squeeze()
+        elif self.output_dim == 1:
+            # return 1D array
+            Y = Y.ravel()
 
         if return_dataframe:
             # Build DataFrame with inputs and outputs
@@ -272,10 +446,38 @@ class PyTorchApproximator(BaseApproximator):
     
     def save(self, path: str) -> None:
         """
-        Save the complete model state to a file.
+        Save the trained model to disk.
         
-        Note: Models with custom transforms (lambdas, closures) require cloudpickle
-        and may not be portable across Python versions. Install with: pip install cloudpickle
+        Saves the complete model state including architecture, weights, scalers,
+        and transformations. Models can be loaded with `load_approximator()`.
+        
+        Parameters
+        ----------
+        path : str
+            Path to save the model file (typically with .pt extension)
+            
+        Raises
+        ------
+        ModelNotFittedError
+            If trying to save an unfitted model
+        NNApproxError
+            If custom transforms cannot be serialized
+            
+        Examples
+        --------
+        >>> func.fit(data, epochs=5000)
+        >>> func.save('my_model.pt')
+        
+        Notes
+        -----
+        - Custom transforms require cloudpickle: `pip install cloudpickle`
+        - Models with custom transforms may not load across Python versions
+        - Predefined transforms are always portable
+        
+        See Also
+        --------
+        load : Load a model
+        load_torch_approximator : Load a model without creating an instance
         """
         if not self.is_fitted:
             raise ModelNotFittedError("Cannot save an unfitted model.")
@@ -345,10 +547,39 @@ class PyTorchApproximator(BaseApproximator):
 
     def load(self, path: str) -> "PyTorchApproximator":
         """
-        Load a complete model state from a file.
+        Load a trained model from disk.
         
-        Warning: Models saved with custom transforms (lambdas) may not load
-        across different Python versions.
+        Parameters
+        ----------
+        path : str
+            Path to the saved model file
+            
+        Returns
+        -------
+        self : PyTorchApproximator
+            The loaded approximator
+            
+        Raises
+        ------
+        NNApproxError
+            If the file is invalid or custom transforms cannot be deserialized
+            
+        Examples
+        --------
+        >>> func = PyTorchApproximator(input=['x'], output=['y'])
+        >>> func.load('my_model.pt')
+        >>> predictions = func(x_new)
+        
+        Notes
+        -----
+        - Input/output names from the saved model override the instance
+        - Model is loaded to CPU for efficient inference
+        - Custom transforms require the same Python environment
+        
+        See Also
+        --------
+        save : Save a model
+        load_torch_approximator : Convenience function for loading
         """
         # Load directly to CPU
         state = torch.load(path, map_location="cpu", weights_only=False)
@@ -422,7 +653,46 @@ class PyTorchApproximator(BaseApproximator):
     
 # create a possibility to load backend-specific approximators from file
 def load_torch_approximator(path: str) -> PyTorchApproximator:
-    """Load a PyTorchApproximator from file."""
+    """
+    Load a saved PyTorchApproximator from file.
+    
+    This is a convenience function that creates a new approximator instance
+    and loads the saved state into it.
+    
+    Parameters
+    ----------
+    path : str
+        Path to the saved model file
+        
+    Returns
+    -------
+    approximator : PyTorchApproximator
+        A fully initialized and fitted approximator ready for predictions
+        
+    Examples
+    --------
+    >>> import nnapprox as nna
+    >>> 
+    >>> # Load and use immediately
+    >>> func = nna.load_approximator('model.pt', backend='pytorch')
+    >>> predictions = func(x1, x2)
+    
+    >>> # Or use the backend-specific function
+    >>> from nnapprox.backends.pytorch import load_torch_approximator
+    >>> func = load_torch_approximator('model.pt')
+    
+    Notes
+    -----
+    This is equivalent to:
+    
+    >>> func = PyTorchApproximator(input=['dummy'], output=['dummy'])
+    >>> func.load('model.pt')
+    
+    See Also
+    --------
+    PyTorchApproximator.load : Load into an existing instance
+    PyTorchApproximator.save : Save a model
+    """
     # Create a minimal dummy instance
     approximator = PyTorchApproximator(
         input=["dummy_input"],  # Will be overwritten

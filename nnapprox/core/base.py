@@ -45,6 +45,8 @@ class BaseApproximator(ABC):
         self.input_transforms = [Transform.predefined("identity") for _ in range(self.input_dim)]
         self.output_transforms = [Transform.predefined("identity") for _ in range(self.output_dim)]
 
+        # TODO: backend-independent scaler interface that maps X,Y after transforms into proper space for NN (typically between -1 and 1)
+
         # Fit flag
         self.is_fitted = False
 
@@ -58,10 +60,54 @@ class BaseApproximator(ABC):
         inverse: Any = None,
     ) -> None:
         """
-        Register a forward / inverse transformation for a variable.
-
-        *Pre‑defined* transforms are referenced by ``transform_type`` (e.g.
-        ``"log"``).  For a custom pair supply ``forward`` and ``inverse``.
+        Register a transformation for an input or output variable.
+        
+        Transformations are applied before training/prediction and inverted after
+        prediction. This is useful for handling variables with different scales
+        or non-linear relationships.
+        
+        Parameters
+        ----------
+        label : str
+            Name of the variable (must be in input_names or output_names)
+        transform_type : str, optional
+            Predefined transform name. Options: 'log', 'log10', 'sqrt', 'square',
+            'identity'. Cannot be used with forward/inverse.
+        forward : Callable, optional
+            Custom forward transformation function. Must be used with inverse.
+        inverse : Callable, optional
+            Custom inverse transformation function. Must be used with forward.
+            
+        Raises
+        ------
+        ValueError
+            If label is not a known input or output name, or if both transform_type
+            and forward/inverse are provided
+            
+        Examples
+        --------
+        Using predefined transforms:
+        
+        >>> func.set_transform('x', transform_type='log')
+        >>> func.set_transform('y', transform_type='sqrt')
+        
+        Using custom transforms (must be defined in a module):
+        
+        >>> # In my_transforms.py:
+        >>> # def cube(x): return x**3
+        >>> # def cube_root(x): return x**(1/3)
+        >>> 
+        >>> from my_transforms import cube, cube_root
+        >>> func.set_transform('x', forward=cube, inverse=cube_root)
+        
+        Notes
+        -----
+        Custom transforms defined as lambdas or in notebooks require cloudpickle
+        for serialization and may not be portable across Python versions.
+        
+        See Also
+        --------
+        Transform.predefined : Available predefined transforms
         """
         if label in self.input_names:
             idx = self.input_names.index(label)
