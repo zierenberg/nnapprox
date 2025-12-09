@@ -47,10 +47,36 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#core-module">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-nnapprox.core.base">Core Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nnapprox.core.base.BaseApproximator"><code class="docutils literal notranslate"><span class="pre">BaseApproximator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.base.BaseApproximator.set_transform"><code class="docutils literal notranslate"><span class="pre">BaseApproximator.set_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.base.BaseApproximator.score"><code class="docutils literal notranslate"><span class="pre">BaseApproximator.score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.base.BaseApproximator.fit"><code class="docutils literal notranslate"><span class="pre">BaseApproximator.fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.base.BaseApproximator.predict"><code class="docutils literal notranslate"><span class="pre">BaseApproximator.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.base.BaseApproximator.save"><code class="docutils literal notranslate"><span class="pre">BaseApproximator.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.base.BaseApproximator.load"><code class="docutils literal notranslate"><span class="pre">BaseApproximator.load()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#pytorch-backend">PyTorch Backend</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#utilities">Utilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#exceptions">Exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#utilities">Utilities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nnapprox.core.utils.Transform"><code class="docutils literal notranslate"><span class="pre">Transform</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.utils.Transform.forward"><code class="docutils literal notranslate"><span class="pre">Transform.forward</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.utils.Transform.inverse"><code class="docutils literal notranslate"><span class="pre">Transform.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.utils.Transform.spec"><code class="docutils literal notranslate"><span class="pre">Transform.spec</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.utils.Transform.predefined"><code class="docutils literal notranslate"><span class="pre">Transform.predefined()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#nnapprox.core.utils.Transform.custom"><code class="docutils literal notranslate"><span class="pre">Transform.custom()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-nnapprox.core.exceptions">Exceptions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#nnapprox.core.exceptions.NNApproxError"><code class="docutils literal notranslate"><span class="pre">NNApproxError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nnapprox.core.exceptions.BackendNotAvailableError"><code class="docutils literal notranslate"><span class="pre">BackendNotAvailableError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#nnapprox.core.exceptions.ModelNotFittedError"><code class="docutils literal notranslate"><span class="pre">ModelNotFittedError</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
@@ -82,17 +108,269 @@
              
   <section id="api-reference">
 <h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
-<section id="core-module">
-<h2>Core Module<a class="headerlink" href="#core-module" title="Link to this heading"></a></h2>
+<section id="module-nnapprox.core.base">
+<span id="core-module"></span><h2>Core Module<a class="headerlink" href="#module-nnapprox.core.base" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="nnapprox.core.base.BaseApproximator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nnapprox.core.base.</span></span><span class="sig-name descname"><span class="pre">BaseApproximator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/base.html#BaseApproximator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.base.BaseApproximator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<p>Minimal interface that all backends must implement.</p>
+<dl class="simple">
+<dt>Concrete classes <strong>must</strong> implement:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">fit</span></code> – train the model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">predict</span></code> – return predictions for arbitrary input formats</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">save</span></code> / <code class="docutils literal notranslate"><span class="pre">load</span></code> – persistence</p></li>
+</ul>
+</dd>
+</dl>
+<p>The <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method is provided here so that every subclass can be used
+like a plain Python function:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">)</span>         <span class="c1"># scalar call</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_arr</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>         <span class="c1"># DataFrame call</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df_out</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">return_dataframe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>)</p></li>
+<li><p><strong>output</strong> (<em>Sequence</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>)</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="nnapprox.core.base.BaseApproximator.set_transform">
+<span class="sig-name descname"><span class="pre">set_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predefined</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forward</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/base.html#BaseApproximator.set_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.base.BaseApproximator.set_transform" title="Link to this definition"></a></dt>
+<dd><p>Register a transformation for an input or output variable.</p>
+<p>Transformations are applied before training/prediction and inverted after
+prediction. This is useful for handling variables with different scales
+or non-linear relationships.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the variable (must be in input_names or output_names)</p></li>
+<li><p><strong>predefined</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Predefined transform name. Options: ‘log’, ‘log10’, ‘sqrt’, ‘square’,
+‘identity’. Cannot be used with forward/inverse.</p></li>
+<li><p><strong>forward</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Custom forward transformation function. Must be used with inverse.</p></li>
+<li><p><strong>inverse</strong> (<em>Callable</em><em>, </em><em>optional</em>) – Custom inverse transformation function. Must be used with forward.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If label is not a known input or output name, or if both predefined
+    and forward/inverse are provided</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>predefined</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>forward</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>inverse</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Using predefined transforms:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">func</span><span class="o">.</span><span class="n">set_transform</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">predefined</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">func</span><span class="o">.</span><span class="n">set_transform</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">predefined</span><span class="o">=</span><span class="s1">&#39;sqrt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Using custom transforms (must be defined in a module)</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># In my_transforms.py:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># def cube(x): return x**3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># def cube_root(x): return x**(1/3)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">my_transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">cube</span><span class="p">,</span> <span class="n">cube_root</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">func</span><span class="o">.</span><span class="n">set_transform</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">forward</span><span class="o">=</span><span class="n">cube</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="n">cube_root</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>Custom transforms defined as lambdas or in notebooks require cloudpickle
+for serialization and may not be portable across Python versions.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transform.predefined</span></code></dt><dd><p>Available predefined transforms</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nnapprox.core.base.BaseApproximator.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/base.html#BaseApproximator.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.base.BaseApproximator.score" title="Link to this definition"></a></dt>
+<dd><p>Return the coefficient of determination R² of the prediction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>X</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+<li><p><strong>y</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nnapprox.core.base.BaseApproximator.fit">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/base.html#BaseApproximator.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.base.BaseApproximator.fit" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#nnapprox.core.base.BaseApproximator" title="nnapprox.core.base.BaseApproximator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseApproximator</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nnapprox.core.base.BaseApproximator.predict">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/base.html#BaseApproximator.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.base.BaseApproximator.predict" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+<li><p><strong>return_dataframe</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nnapprox.core.base.BaseApproximator.save">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/base.html#BaseApproximator.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.base.BaseApproximator.save" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nnapprox.core.base.BaseApproximator.load">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/base.html#BaseApproximator.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.base.BaseApproximator.load" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#nnapprox.core.base.BaseApproximator" title="nnapprox.core.base.BaseApproximator"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseApproximator</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="pytorch-backend">
 <h2>PyTorch Backend<a class="headerlink" href="#pytorch-backend" title="Link to this heading"></a></h2>
 </section>
 <section id="utilities">
 <h2>Utilities<a class="headerlink" href="#utilities" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="nnapprox.core.utils.Transform">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nnapprox.core.utils.</span></span><span class="sig-name descname"><span class="pre">Transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/utils.html#Transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.utils.Transform" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Container for a forward / inverse pair and a serialisable spec.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>forward</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p></li>
+<li><p><strong>inverse</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a><em>[</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p></li>
+<li><p><strong>spec</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="nnapprox.core.utils.Transform.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><a class="headerlink" href="#nnapprox.core.utils.Transform.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="nnapprox.core.utils.Transform.inverse">
+<span class="sig-name descname"><span class="pre">inverse</span></span><a class="headerlink" href="#nnapprox.core.utils.Transform.inverse" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="nnapprox.core.utils.Transform.spec">
+<span class="sig-name descname"><span class="pre">spec</span></span><a class="headerlink" href="#nnapprox.core.utils.Transform.spec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nnapprox.core.utils.Transform.predefined">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">predefined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/utils.html#Transform.predefined"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.utils.Transform.predefined" title="Link to this definition"></a></dt>
+<dd><p>Factory for the four built‑in transforms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#nnapprox.core.utils.Transform" title="nnapprox.core.utils.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nnapprox.core.utils.Transform.custom">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">custom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">forward</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nnapprox/core/utils.html#Transform.custom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.utils.Transform.custom" title="Link to this definition"></a></dt>
+<dd><p>Factory for user‑supplied callables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#nnapprox.core.utils.Transform" title="nnapprox.core.utils.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>forward</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>)</p></li>
+<li><p><strong>inverse</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.14)"><em>Callable</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="exceptions">
-<h2>Exceptions<a class="headerlink" href="#exceptions" title="Link to this heading"></a></h2>
+<section id="module-nnapprox.core.exceptions">
+<span id="exceptions"></span><h2>Exceptions<a class="headerlink" href="#module-nnapprox.core.exceptions" title="Link to this heading"></a></h2>
+<p>Custom exceptions for nnapprox.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="nnapprox.core.exceptions.NNApproxError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nnapprox.core.exceptions.</span></span><span class="sig-name descname"><span class="pre">NNApproxError</span></span><a class="reference internal" href="_modules/nnapprox/core/exceptions.html#NNApproxError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.exceptions.NNApproxError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>Base exception for nnapprox.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="nnapprox.core.exceptions.BackendNotAvailableError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nnapprox.core.exceptions.</span></span><span class="sig-name descname"><span class="pre">BackendNotAvailableError</span></span><a class="reference internal" href="_modules/nnapprox/core/exceptions.html#BackendNotAvailableError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.exceptions.BackendNotAvailableError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nnapprox.core.exceptions.NNApproxError" title="nnapprox.core.exceptions.NNApproxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">NNApproxError</span></code></a></p>
+<p>Raised when a requested backend is not available.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="nnapprox.core.exceptions.ModelNotFittedError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nnapprox.core.exceptions.</span></span><span class="sig-name descname"><span class="pre">ModelNotFittedError</span></span><a class="reference internal" href="_modules/nnapprox/core/exceptions.html#ModelNotFittedError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nnapprox.core.exceptions.ModelNotFittedError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nnapprox.core.exceptions.NNApproxError" title="nnapprox.core.exceptions.NNApproxError"><code class="xref py py-class docutils literal notranslate"><span class="pre">NNApproxError</span></code></a></p>
+<p>Raised when trying to use a model that hasn’t been fitted.</p>
+</dd></dl>
+
 </section>
 </section>
 
