@@ -18,3 +18,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+`GitHub repository <https://github.com/zierenberg/nnapprox>`_
