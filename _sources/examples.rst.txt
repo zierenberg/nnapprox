@@ -17,7 +17,7 @@ Example 1: Simple Function Approximation
    func = nna.create_approximator(
        input=['x'],
        output=['y'],
-       backend='pytorch'
+       backend='torch'
    )
 
    # Train

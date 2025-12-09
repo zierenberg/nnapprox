@@ -12,13 +12,13 @@ Core Module
 PyTorch Backend
 ---------------
 
-.. autoclass:: nnapprox.backends.pytorch.PyTorchApproximator
+.. autoclass:: nnapprox.backends.torch.PyTorchApproximator
    :members:
    :undoc-members:
    :show-inheritance:
    :special-members: __init__, __call__
 
-.. autofunction:: nnapprox.backends.pytorch.load_torch_approximator
+.. autofunction:: nnapprox.backends.torch.load_torch_approximator
 
 Utilities
 ---------
