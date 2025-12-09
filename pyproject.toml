@@ -10,16 +10,13 @@ authors = [
 ]
 description = "Neural network approximation for high-dimensional functional relations"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.8"
 dependencies = [
     "numpy>=1.20.0",
     "scipy>=1.7.0",
 ]
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
+
 [tool.hatch.version]
 path = "nnapprox/_version.py"
 
