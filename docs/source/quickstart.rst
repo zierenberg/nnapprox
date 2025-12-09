@@ -20,14 +20,16 @@ Basic Usage
    func = nna.create_approximator(
        input=['x1', 'x2'],
        output=['y'],
-       backend='pytorch',
+       backend='torch',
        hidden_dims=[64, 64],
    )
 
    func.fit(data, epochs=1000, lr=1e-3)
 
-   # Make predictions
-   predictions = func.predict(x1_new, x2_new)
+   # Make approximations (within the training range)
+   x1_new = 1.123
+   x2_new = np.array([0.5, 1.5, 2.5])
+   values = func(x1_new, x2_new)
 
 With Transforms
 ---------------
@@ -35,8 +37,8 @@ With Transforms
 .. code-block:: python
 
    # Use predefined transforms
-   func.set_transform('x1', transform_type='log')
-   func.set_transform('y', transform_type='log')
+   func.set_transform('x1', predefined='log')
+   func.set_transform('y', predefined='log')
 
    # Or custom transforms
    func.set_transform(
@@ -54,4 +56,4 @@ Saving and Loading
    func.save('my_model.pt')
 
    # Load
-   func2 = nna.load_approximator('my_model.pt', backend='pytorch')
+   func2 = nna.load_approximator('my_model.pt', backend='torch')

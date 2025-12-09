@@ -12,29 +12,29 @@ from .core.exceptions import (
 )
 
 # Lazy factory
-def create_approximator(backend: str = "pytorch", **kwargs) -> BaseApproximator:
+def create_approximator(backend: str = "torch", **kwargs) -> BaseApproximator:
     """
     Create an approximator instance for the specified backend.
     Parameters
     ----------
-    backend : str, default="pytorch"
-        Backend to use (currently only 'pytorch' is supported)
+    backend : str, default="torch"
+        Backend to use (currently only 'torch' is supported)
     **kwargs
         Additional keyword arguments passed to the backend-specific approximator
         constructor.
     """
     backend = backend.lower()
-    if backend == "pytorch":
-        from .backends.pytorch import PyTorchApproximator
+    if backend == "torch":
+        from .backends.torch import PyTorchApproximator
         return PyTorchApproximator(**kwargs)
     # if backend == "jax":
     #     raise BackendNotAvailableError("JAX backend is not available in this installation.")
     #     #from .backends.jax import JAXApproximator
     #     #return JAXApproximator(**kwargs)
-    raise BackendNotAvailableError(f"Unsupported backend {backend!r}. Available: pytorch.")
+    raise BackendNotAvailableError(f"Unsupported backend {backend!r}. Available: torch.")
 
 # load approximator with a given backend
-def load_approximator(path: str, backend: str = "pytorch") -> BaseApproximator:
+def load_approximator(path: str, backend: str = "torch") -> BaseApproximator:
     """
     Load a saved approximator from disk using the specified backend.
     
@@ -42,8 +42,8 @@ def load_approximator(path: str, backend: str = "pytorch") -> BaseApproximator:
     ----------
     path : str
         Path to the saved model file
-    backend : str, default="pytorch"
-        Backend to use for loading ('pytorch', etc.)
+    backend : str, default="torch"
+        Backend to use for loading ('torch', etc.)
         
     Returns
     -------
@@ -52,11 +52,12 @@ def load_approximator(path: str, backend: str = "pytorch") -> BaseApproximator:
         
     Example
     -------
-    >>> func = load_approximator("model.pt", backend="pytorch")
-    >>> y = func(x1, x2)
+    >>> func = create_approximator(backend="torch")
+    >>> func.save("model.pt")
+    >>> func = load_approximator("model.pt", backend="torch")
     """
-    if backend == "pytorch":
-        from .backends.pytorch import load_torch_approximator
+    if backend == "torch":
+        from .backends.torch import load_torch_approximator
         return load_torch_approximator(path)
     else:
         raise BackendNotAvailableError(f"Unsupported backend: {backend!r}")

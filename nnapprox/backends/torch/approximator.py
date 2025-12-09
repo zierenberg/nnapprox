@@ -95,8 +95,8 @@ class PyTorchApproximator(BaseApproximator):
     
     With transformations:
     
-    >>> func.set_transform('x1', transform_type='log')
-    >>> func.set_transform('y', transform_type='log')
+    >>> func.set_transform('x1', predefined='log')
+    >>> func.set_transform('y', predefined='exp')
     >>> func.fit(data, epochs=1000)
     
     Notes
@@ -114,8 +114,8 @@ class PyTorchApproximator(BaseApproximator):
     def __init__(
         self,
         *,
-        input: Sequence[str],
-        output: Sequence[str],
+        input: Sequence[str] | None = None,
+        output: Sequence[str] | None = None,
         hidden_dims: Sequence[int] | None = None,
         activation: Type[nn.Module] = nn.Tanh,
         dropout: float = 0.0,
@@ -124,6 +124,15 @@ class PyTorchApproximator(BaseApproximator):
     ):
         if torch is None:
             raise BackendNotAvailableError("PyTorch backend not available.")
+
+        if input is None and output is None:
+            # dummy approximator for API testing
+            super().__init__(input=[], output=[], verbose=verbose)
+            self.model = None
+            return 
+
+        if input is None or output is None:
+            raise ValueError("Input and output variable names must be provided.")
 
         # Backend-independent init
         super().__init__(input=input, output=output, verbose=verbose)
@@ -477,6 +486,12 @@ class PyTorchApproximator(BaseApproximator):
         load : Load a model
         load_torch_approximator : Load a model without creating an instance
         """
+        if self.model is None:
+            # dummy instance that is stored for API testing
+            state = {"is_dummy": True}
+            torch.save(state, path, pickle_protocol=pickle.HIGHEST_PROTOCOL)
+            return
+
         if not self.is_fitted:
             raise ModelNotFittedError("Cannot save an unfitted model.")
         
@@ -566,7 +581,6 @@ class PyTorchApproximator(BaseApproximator):
         --------
         >>> func = PyTorchApproximator(input=['x'], output=['y'])
         >>> func.load('my_model.pt')
-        >>> predictions = func(x_new)
         
         Notes
         -----
@@ -582,6 +596,10 @@ class PyTorchApproximator(BaseApproximator):
         # Load directly to CPU
         state = torch.load(path, map_location="cpu", weights_only=False)
         
+        if state.get("is_dummy", True):
+            # dummy instance for API testing
+            return self
+
         if "model_state" not in state:
             raise NNApproxError(f"Invalid checkpoint: missing 'model_state'.")
         
@@ -672,18 +690,18 @@ def load_torch_approximator(path: str) -> PyTorchApproximator:
     >>> import nnapprox as nna
     >>> 
     >>> # Load and use immediately
-    >>> func = nna.load_approximator('model.pt', backend='pytorch')
+    >>> func = nna.load_approximator('model.pt', backend='torch')
     >>> predictions = func(x1, x2)
     
     >>> # Or use the backend-specific function
-    >>> from nnapprox.backends.pytorch import load_torch_approximator
+    >>> from nnapprox.backends.torch import load_torch_approximator
     >>> func = load_torch_approximator('model.pt')
     
     Notes
     -----
     This is equivalent to:
     
-    >>> func = PyTorchApproximator(input=['dummy'], output=['dummy'])
+    >>> func = PyTorchApproximator(input=['dummy_input'], output=['dummy_output'])
     >>> func.load('model.pt')
     
     See Also
@@ -692,11 +710,6 @@ def load_torch_approximator(path: str) -> PyTorchApproximator:
     PyTorchApproximator.save : Save a model
     """
     # Create a minimal dummy instance
-    approximator = PyTorchApproximator(
-        input=["dummy_input"],  # Will be overwritten
-        output=["dummy_output"],  # Will be overwritten
-        verbose=False
-    )
-    # Load the real state
+    approximator = PyTorchApproximator(verbose=False) 
     approximator.load(path)
     return approximator

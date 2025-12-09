@@ -18,9 +18,10 @@ class BaseApproximator(ABC):
     The ``__call__`` method is provided here so that every subclass can be used
     like a plain Python function:
 
-    >>> y = approximator(x1, x2)         # scalar call
-    >>> y_arr = approximator(df)         # DataFrame call
-    >>> df_out = approximator(df, return_dataframe=True)
+    >>> y = func(x1, x2)         # scalar call
+    >>> y_arr = func(df)         # DataFrame call
+    >>> df_out = func(df, return_dataframe=True)
+
     """
 
     def __init__(
@@ -44,8 +45,6 @@ class BaseApproximator(ABC):
         # Transform placeholders
         self.input_transforms = [Transform.predefined("identity") for _ in range(self.input_dim)]
         self.output_transforms = [Transform.predefined("identity") for _ in range(self.output_dim)]
-
-        # TODO: backend-independent scaler interface that maps X,Y after transforms into proper space for NN (typically between -1 and 1)
 
         # Fit flag
         self.is_fitted = False
@@ -108,6 +107,7 @@ class BaseApproximator(ABC):
         See Also
         --------
         Transform.predefined : Available predefined transforms
+        
         """
         if label in self.input_names:
             idx = self.input_names.index(label)

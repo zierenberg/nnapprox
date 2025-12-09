@@ -34,7 +34,7 @@ y = np.sin(x) * np.exp(-x/10)
 func = nna.create_approximator(
     input=['x'],
     output=['y'],
-    backend='pytorch'
+    backend='torch'
 )
 func.fit({'x': x, 'y': y}, epochs=5000)
 
@@ -43,7 +43,7 @@ y_pred = func(x)
 
 # Save/load
 func.save('model.pt')
-func2 = nna.load_approximator('model.pt', backend='pytorch')
+func2 = nna.load_approximator('model.pt', backend='torch')
 ```
 
 ## Features
@@ -69,7 +69,7 @@ data = pd.DataFrame({'x1': x1, 'x2': x2, 'y': y_true(x1, x2)})
 func = nna.create_approximator(
     input=['x1', 'x2'],
     output=['y'],
-    backend='pytorch'
+    backend='torch'
 )
 func.fit(data, epochs=3000)
 predictions = func(data, return_dataframe=True)

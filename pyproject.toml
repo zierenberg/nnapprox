@@ -22,7 +22,7 @@ path = "nnapprox/_version.py"
 
 
 [project.optional-dependencies]
-pytorch = [
+torch = [
     "torch>=1.9",
 ]
 all = [

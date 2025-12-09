@@ -23,7 +23,7 @@ class MLPModel(nn.Module):
         if nn is None:                     # pragma: no cover
             raise BackendNotAvailableError(
                 "PyTorch is required to build the MLPModel. "
-                "Install with: pip install nnapprox[pytorch]"
+                "Install with: pip install nnapprox[torch]"
             ) from _TORCH_IMPORT_ERROR
 
         super().__init__()

@@ -8,7 +8,7 @@ from nnapprox.core.exceptions import BackendNotAvailableError
 
 def test_missing_torch(monkeypatch):
     # Simulate torch import failure
-    module = "nnapprox.backends.pytorch.approximator"
+    module = "nnapprox.backends.torch.approximator"
     monkeypatch.setattr(f"{module}.torch", None)
     monkeypatch.setattr(f"{module}.nn", None)
     monkeypatch.setattr(f"{module}.optim", None)
@@ -17,7 +17,7 @@ def test_missing_torch(monkeypatch):
         nna.create_approximator(
             input=["x"],
             output=["y"],
-            backend="pytorch",
+            backend="torch",
         )
 
 def test_create_approximator_errors():
@@ -35,12 +35,12 @@ def test_save_and_load_model_errors():
 
 def test_missing_cloudpickle(monkeypatch):
     # Simulate cloudpickle import failure
-    monkeypatch.setattr("nnapprox.backends.pytorch.approximator.cloudpickle", None)
+    monkeypatch.setattr("nnapprox.backends.torch.approximator.cloudpickle", None)
 
     with pytest.raises(nna.NNApproxError):
         func = nna.create_approximator(
             input=["x"],
             output=["y"],
-            backend="pytorch",
+            backend="torch",
         )
         func.save("/dev/null/")
