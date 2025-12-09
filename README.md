@@ -71,7 +71,7 @@ func = nna.create_approximator(
     output=['y'],
     backend='pytorch'
 )
-func.fit(df, epochs=3000)
+func.fit(data, epochs=3000)
 predictions = func(data, return_dataframe=True)
 ```
 
@@ -79,11 +79,15 @@ predictions = func(data, return_dataframe=True)
 
 ```python
 # Predefined transforms
-func.set_transform('x', transform_type='log')
-func.set_transform('y', transform_type='sqrt')
+func.set_transform('x1', predefined='log')
+func.set_transform('y', predefined='exp')
 
-# Custom transforms (must be defined in a module)
-func.set_transform('x', forward=forward_fn, inverse=inverse_fn)
+# Custom transforms
+def forward_fn(x):
+    return x**3
+def inverse_fn(y):
+    return y**(1/3)
+func.set_transform('x1', forward=forward_fn, inverse=inverse_fn)
 ```
 
 ## Requirements

@@ -18,7 +18,7 @@ def create_approximator(backend: str = "pytorch", **kwargs) -> BaseApproximator:
     Parameters
     ----------
     backend : str, default="pytorch"
-        Backend to use ('pytorch', 'jax', etc.)
+        Backend to use (currently only 'pytorch' is supported)
     **kwargs
         Additional keyword arguments passed to the backend-specific approximator
         constructor.
@@ -27,10 +27,11 @@ def create_approximator(backend: str = "pytorch", **kwargs) -> BaseApproximator:
     if backend == "pytorch":
         from .backends.pytorch import PyTorchApproximator
         return PyTorchApproximator(**kwargs)
-    if backend == "jax":
-        from .backends.jax import JAXApproximator
-        return JAXApproximator(**kwargs)
-    raise NNApproxError(f"Unsupported backend {backend!r}. Available: pytorch, jax.")
+    # if backend == "jax":
+    #     raise BackendNotAvailableError("JAX backend is not available in this installation.")
+    #     #from .backends.jax import JAXApproximator
+    #     #return JAXApproximator(**kwargs)
+    raise BackendNotAvailableError(f"Unsupported backend {backend!r}. Available: pytorch.")
 
 # load approximator with a given backend
 def load_approximator(path: str, backend: str = "pytorch") -> BaseApproximator:
@@ -58,7 +59,7 @@ def load_approximator(path: str, backend: str = "pytorch") -> BaseApproximator:
         from .backends.pytorch import load_torch_approximator
         return load_torch_approximator(path)
     else:
-        raise ValueError(f"Unsupported backend: {backend!r}")
+        raise BackendNotAvailableError(f"Unsupported backend: {backend!r}")
 
 __all__ = [
     "BaseApproximator",

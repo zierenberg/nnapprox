@@ -55,7 +55,7 @@ class BaseApproximator(ABC):
         self,
         label: str,
         *,
-        transform_type: str | None = None,
+        predefined: str | None = None,
         forward: Any = None,
         inverse: Any = None,
     ) -> None:
@@ -70,7 +70,7 @@ class BaseApproximator(ABC):
         ----------
         label : str
             Name of the variable (must be in input_names or output_names)
-        transform_type : str, optional
+        predefined : str, optional
             Predefined transform name. Options: 'log', 'log10', 'sqrt', 'square',
             'identity'. Cannot be used with forward/inverse.
         forward : Callable, optional
@@ -81,15 +81,15 @@ class BaseApproximator(ABC):
         Raises
         ------
         ValueError
-            If label is not a known input or output name, or if both transform_type
+            If label is not a known input or output name, or if both predefined
             and forward/inverse are provided
             
         Examples
         --------
         Using predefined transforms:
         
-        >>> func.set_transform('x', transform_type='log')
-        >>> func.set_transform('y', transform_type='sqrt')
+        >>> func.set_transform('x', predefined='log')
+        >>> func.set_transform('y', predefined='sqrt')
         
         Using custom transforms (must be defined in a module):
         
@@ -119,12 +119,12 @@ class BaseApproximator(ABC):
             raise NNApproxError(f"{label!r} is not a known input or output name.")
 
         # Predefined transform
-        if transform_type:
+        if predefined:
             if forward is not None or inverse is not None:
                 raise NNApproxError(
-                    "Provide either `transform_type` **or** both `forward`/`inverse`, not both."
+                    "Provide either `predefined` **or** both `forward`/`inverse`, not both."
                 )
-            target[idx] = Transform.predefined(transform_type)
+            target[idx] = Transform.predefined(predefined)
             return
 
         # Custom transform
@@ -140,13 +140,6 @@ class BaseApproximator(ABC):
             raise NNApproxError("Custom transform functions must be defined in a module.") from exc
 
         target[idx] = Transform.custom(forward, inverse)
-
-    # helper data extraction method
-    def _extract_arrays(self, data: dict) -> tuple[np.ndarray, np.ndarray]:
-        """Return X, Y as plain NumPy arrays."""
-        X = np.column_stack([np.asarray(data[name]) for name in self.input_names])
-        Y = np.column_stack([np.asarray(data[name]) for name in self.output_names])
-        return X, Y
 
     # make the approximator callable
     def __call__(self, *args: Any, **kwargs: Any):
