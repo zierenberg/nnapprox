@@ -53,7 +53,7 @@ Saving and Loading
 .. code-block:: python
 
    # Save
-   func.save('my_model.pt')
+   func.save('my_model.nna')
 
    # Load
-   func2 = nna.load_approximator('my_model.pt', backend='torch')
+   func2 = nna.load_approximator('my_model.nna', backend='torch')
