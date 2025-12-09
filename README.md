@@ -42,8 +42,8 @@ func.fit({'x': x, 'y': y}, epochs=5000)
 y_pred = func(x)
 
 # Save/load
-func.save('model.pt')
-func2 = nna.load_approximator('model.pt', backend='torch')
+func.save('model.nna')
+func2 = nna.load_approximator('model.nna', backend='torch')
 ```
 
 ## Features
@@ -107,14 +107,3 @@ Contributions welcome! Please open an issue or submit a pull request.
 ## License
 
 MIT License - see [LICENSE](LICENSE) file.
-
-## Citation
-
-```bibtex
-@software{nnapprox2024,
-  author = {Johannes Zierenberg},
-  title = {nnapprox: Neural Network Function Approximation},
-  year = {2024},
-  url = {https://github.com/zierenberg/nnapprox}
-}
-```
