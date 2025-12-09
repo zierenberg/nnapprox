@@ -25,12 +25,16 @@ def create_approximator(backend: str = "torch", **kwargs) -> BaseApproximator:
     """
     backend = backend.lower()
     if backend == "torch":
+        # check if torch is installed (lazy import)
+        try:
+            import torch
+        except ImportError as e:
+            raise BackendNotAvailableError(
+                "PyTorch backend selected but PyTorch is not installed. "
+                "Please install PyTorch to use this backend."
+            )
         from .backends.torch import PyTorchApproximator
         return PyTorchApproximator(**kwargs)
-    # if backend == "jax":
-    #     raise BackendNotAvailableError("JAX backend is not available in this installation.")
-    #     #from .backends.jax import JAXApproximator
-    #     #return JAXApproximator(**kwargs)
     raise BackendNotAvailableError(f"Unsupported backend {backend!r}. Available: torch.")
 
 # load approximator with a given backend
@@ -53,8 +57,8 @@ def load_approximator(path: str, backend: str = "torch") -> BaseApproximator:
     Example
     -------
     >>> func = create_approximator(backend="torch")
-    >>> func.save("model.pt")
-    >>> func = load_approximator("model.pt", backend="torch")
+    >>> func.save("model.nna")
+    >>> func = load_approximator("model.nna", backend="torch")
     """
     if backend == "torch":
         from .backends.torch import load_torch_approximator

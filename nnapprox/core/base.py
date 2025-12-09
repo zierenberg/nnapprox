@@ -76,13 +76,13 @@ class BaseApproximator(ABC):
             Custom forward transformation function. Must be used with inverse.
         inverse : Callable, optional
             Custom inverse transformation function. Must be used with forward.
-            
+        
         Raises
         ------
         ValueError
             If label is not a known input or output name, or if both predefined
             and forward/inverse are provided
-            
+        
         Examples
         --------
         Using predefined transforms:
@@ -90,7 +90,7 @@ class BaseApproximator(ABC):
         >>> func.set_transform('x', predefined='log')
         >>> func.set_transform('y', predefined='sqrt')
         
-        Using custom transforms (must be defined in a module):
+        Using custom transforms (must be defined in a module)
         
         >>> # In my_transforms.py:
         >>> # def cube(x): return x**3
@@ -132,12 +132,8 @@ class BaseApproximator(ABC):
             raise NNApproxError("Both `forward` and `inverse` must be supplied for a custom transform.")
 
         # Ensure functions are defined in a module
-        import inspect
-        try:
-            inspect.getsource(forward)
-            inspect.getsource(inverse)
-        except OSError as exc:
-            raise NNApproxError("Custom transform functions must be defined in a module.") from exc
+        if not callable(forward) or not callable(inverse):
+            raise NNApproxError("Custom transform functions must be callable.")
 
         target[idx] = Transform.custom(forward, inverse)
 

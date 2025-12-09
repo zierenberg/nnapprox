@@ -21,8 +21,11 @@ class Transform:
         predefined = {
             "identity": (lambda x: x, lambda x: x),
             "log": (np.log, np.exp),
-            "log10": (np.log10, lambda x: np.power(10, x)),
             "exp": (np.exp, np.log),
+            "log10": (np.log10, lambda x: np.power(10, x)),
+            "x**10": (lambda x: np.power(x, 10), np.log10),
+            "sqrt": (np.sqrt, lambda x: np.power(x, 2)),
+            "x**2": (lambda x: np.power(x, 2), np.sqrt),
         }
         if name not in predefined:
             raise ValueError(f"Unknown predefined transform {name!r}")

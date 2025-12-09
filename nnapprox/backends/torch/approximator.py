@@ -192,11 +192,11 @@ class PyTorchApproximator(BaseApproximator):
         self,
         data: Mapping[str, Any],
         *,
-        custom_loss=None,
+        custom_loss = None,
         epochs: int = 10_000,
         lr: float = 1e-3,
-        amsgrad: bool = False, # what does this do? 
-        batch_size: int | None = None,
+        amsgrad: bool = False, # makes convergence more stable in some cases
+        device: str = None,
         verbose: bool | None = None,
         **optim_kwargs: Any,
     ) -> "PyTorchApproximator":
@@ -215,16 +215,14 @@ class PyTorchApproximator(BaseApproximator):
             Number of training epochs
         lr : float, default=1e-3
             Learning rate for Adam optimizer
-        eps : float, default=1e-8
-            Epsilon for numerical stability in Adam. Lower values allow more
-            precise convergence. Use 1e-5 for smoother but less accurate training.
         amsgrad : bool, default=False
             Whether to use AMSGrad variant of Adam. Can improve convergence
             but may find worse local minima.
-        batch_size : int, optional
-            Batch size for mini-batch training. None means full-batch.
         verbose : bool, optional
             Override instance verbose setting
+        device : str, optional
+            Device to use for training ('cpu', 'cuda', 'mps'). Default uses
+            the instance's device.
         **optim_kwargs : Any
             Additional arguments passed to Adam optimizer
             
@@ -261,10 +259,16 @@ class PyTorchApproximator(BaseApproximator):
         """
         Xs, Ys = self.prepare_data(data)
 
+        if device is None:
+            device = self.device
+        else:
+            #test that device is valid
+            device = torch.device(device)
+
         # convert to torch tensors
-        X_tensor = torch.from_numpy(Xs).float().to(self.device)
-        Y_tensor = torch.from_numpy(Ys).float().to(self.device)
-        model_ = self.model.to(self.device)
+        X_tensor = torch.from_numpy(Xs).float().to(device)
+        Y_tensor = torch.from_numpy(Ys).float().to(device)
+        model_ = self.model.to(device)
         if self.verbose:
             print(f"Training data with input shape {X_tensor.shape} and output shape {Y_tensor.shape}.")
 
@@ -451,7 +455,7 @@ class PyTorchApproximator(BaseApproximator):
 
         return Y
     
-    def save(self, path: str) -> None:
+    def save(self, path: str, verbose: bool = False) -> None:
         """
         Save the trained model to disk.
         
@@ -489,6 +493,8 @@ class PyTorchApproximator(BaseApproximator):
         if self.model is None:
             # dummy instance that is stored for API testing
             state = {"is_dummy": True}
+            if verbose:
+                print("Saving dummy PyTorchApproximator instance for API testing.")
             torch.save(state, path, pickle_protocol=pickle.HIGHEST_PROTOCOL)
             return
 
@@ -558,7 +564,7 @@ class PyTorchApproximator(BaseApproximator):
         torch.save(state, path, pickle_protocol=pickle.HIGHEST_PROTOCOL)
 
 
-    def load(self, path: str) -> "PyTorchApproximator":
+    def load(self, path: str, verbose: bool = False) -> "PyTorchApproximator":
         """
         Load a trained model from disk.
         
@@ -596,8 +602,10 @@ class PyTorchApproximator(BaseApproximator):
         # Load directly to CPU
         state = torch.load(path, map_location="cpu", weights_only=False)
         
-        if state.get("is_dummy", True):
+        if state.get("is_dummy", False): # returns True (value of is_dummy) or defaults to False
             # dummy instance for API testing
+            if verbose:
+                print("Loaded dummy PyTorchApproximator instance for API testing.")
             return self
 
         if "model_state" not in state:

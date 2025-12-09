@@ -15,6 +15,9 @@ requires-python = ">=3.8"
 dependencies = [
     "numpy",
     "scipy",
+    "pandas",
+    "scikit-learn",
+    "tqdm",
 ]
 
 [tool.hatch.version]
