@@ -2,9 +2,8 @@ from __future__ import annotations
 import pickle
 try:
     import cloudpickle
-    _HAS_CLOUDPICKLE = True
 except ImportError:
-    _HAS_CLOUDPICKLE = False
+    cloudpickle = None
 import numpy as np
 import pandas as pd
 from typing import Any, Mapping, Sequence, Callable, Type
@@ -18,7 +17,6 @@ try:
     import torch.optim as optim
 except ImportError as exc:
     torch = nn = optim = None
-    _TORCH_IMPORT_ERROR = exc
 
 from ...core.base import BaseApproximator
 from ...core.exceptions import ModelNotFittedError, BackendNotAvailableError, NNApproxError
@@ -125,7 +123,7 @@ class PyTorchApproximator(BaseApproximator):
         **model_kwargs: Any,
     ):
         if torch is None:
-            raise BackendNotAvailableError("PyTorch backend not available.") from _TORCH_IMPORT_ERROR
+            raise BackendNotAvailableError("PyTorch backend not available.")
 
         # Backend-independent init
         super().__init__(input=input, output=output, verbose=verbose)
@@ -488,7 +486,7 @@ class PyTorchApproximator(BaseApproximator):
             for tr in self.input_transforms + self.output_transforms
         )
         
-        if has_custom and not _HAS_CLOUDPICKLE:
+        if has_custom and cloudpickle is None:
             raise NNApproxError(
                 "Cannot save model with custom transforms: cloudpickle is required.\n"
                 "Install with: pip install cloudpickle\n\n"
@@ -588,7 +586,7 @@ class PyTorchApproximator(BaseApproximator):
             raise NNApproxError(f"Invalid checkpoint: missing 'model_state'.")
         
         # Check if cloudpickle is needed
-        if state.get("uses_cloudpickle", False) and not _HAS_CLOUDPICKLE:
+        if state.get("uses_cloudpickle", False) and cloudpickle is None:
             raise NNApproxError(
                 "This model was saved with custom transforms and requires cloudpickle to load.\n"
                 "Install with: pip install cloudpickle"
