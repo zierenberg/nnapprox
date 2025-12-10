@@ -22,7 +22,7 @@ Install from source
 
 .. code-block:: bash
 
-   git clone https://github.com/yourusername/nnapprox.git
+   git clone https://github.com/zierenberg/nnapprox.git
    cd nnapprox
    pip install -e .
 
